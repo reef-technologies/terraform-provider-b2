@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.8] - 2023-12-28
+
+### Changed
+* Upgraded pyinstaller to v6.3.0
+
+## [0.8.7] - 2023-12-27
+
+### Changed
+* Upgraded github.com/hashicorp/terraform-plugin-sdk to v2.31.0
+
+## [0.8.6] - 2023-12-22
+
+### Fixed
+* Fix arm64 builds
+
 ## [0.8.5] - 2023-11-24
 
 ### Changed
@@ -141,7 +156,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Implementation of PoC (simple `b2_application_key` data source)
 
-[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.8...HEAD
+[0.8.8]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.7...v0.8.8
+[0.8.7]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.6...v0.8.7
+[0.8.6]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.5...v0.8.6
+[0.8.5]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/Backblaze/terraform-provider-b2/compare/v0.8.1...v0.8.2
