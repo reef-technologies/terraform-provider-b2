@@ -54,12 +54,16 @@ func resourceB2Bucket() *schema.Resource {
 				ValidateFunc: validation.NoZeroValues,
 			},
 			"bucket_info": {
-				Description: "User-defined information to be stored with the bucket.",
-				Type:        schema.TypeMap,
+				Description: "User-defined information to be stored with the bucket. B2 converts keys to lower case, " +
+					"so they are stored and returned in lower case. Each key can be up to 50 bytes long, keys starting " +
+					"with 'b2-' are reserved, and all values together can take up to 10000 bytes.",
+				Type: schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Optional: true,
+				Optional:         true,
+				ValidateDiagFunc: validateLowerCaseMapKeys,
+				DiffSuppressFunc: suppressMapKeyCaseDiff("bucket_info"),
 			},
 			"cors_rules": {
 				Description: "The initial list of CORS rules for this bucket.",

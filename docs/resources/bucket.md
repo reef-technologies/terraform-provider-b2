@@ -22,7 +22,7 @@ B2 bucket resource.
 
 ### Optional
 
-- `bucket_info` (Map of String) User-defined information to be stored with the bucket.
+- `bucket_info` (Map of String) User-defined information to be stored with the bucket. B2 converts keys to lower case, so they are stored and returned in lower case. Each key can be up to 50 bytes long, keys starting with 'b2-' are reserved, and all values together can take up to 10000 bytes.
 - `cors_rules` (Block List) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedblock--cors_rules))
 - `default_server_side_encryption` (Block List, Max: 1) The default server-side encryption settings for this bucket. (see [below for nested schema](#nestedblock--default_server_side_encryption))
 - `file_lock_configuration` (Block List) File lock enabled flag, and default retention settings. (see [below for nested schema](#nestedblock--file_lock_configuration))
