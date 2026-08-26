@@ -286,6 +286,48 @@ func TestAccResourceB2Bucket_revisionUpdatedOnChange(t *testing.T) {
 	})
 }
 
+func TestAccResourceB2Bucket_bucketInfoKeyCase(t *testing.T) {
+	resourceName := "b2_bucket.test"
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// B2 stores the key in lower case, which must not show up as a permanent diff
+				Config: testAccResourceB2BucketConfig_bucketInfo(bucketName, "ManagedBy"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "bucket_info.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "bucket_info.managedby", "Terraform"),
+				),
+			},
+			{
+				// The key stored in lower case must not be planned as a change back to the config one
+				Config:   testAccResourceB2BucketConfig_bucketInfo(bucketName, "ManagedBy"),
+				PlanOnly: true,
+			},
+			{
+				// Changing the key case only is not a change for B2
+				Config:   testAccResourceB2BucketConfig_bucketInfo(bucketName, "managedby"),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func testAccResourceB2BucketConfig_bucketInfo(bucketName string, key string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPublic"
+  bucket_info = {
+    %s = "Terraform"
+  }
+}
+`, bucketName, key)
+}
+
 func testAccResourceB2BucketConfig_basicPrivate(bucketName string) string {
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {

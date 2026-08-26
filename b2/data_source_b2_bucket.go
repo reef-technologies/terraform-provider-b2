@@ -42,8 +42,9 @@ func dataSourceB2Bucket() *schema.Resource {
 				Computed:    true,
 			},
 			"bucket_info": {
-				Description: "User-defined information to be stored with the bucket.",
-				Type:        schema.TypeMap,
+				Description: "User-defined information stored with the bucket. Keys are returned in lower case, " +
+					"as B2 converts them when they are stored.",
+				Type: schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

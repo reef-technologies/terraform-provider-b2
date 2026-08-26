@@ -13,6 +13,11 @@ package b2
 import (
 	"encoding/base64"
 	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/hashicorp/go-cty/cty"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
@@ -54,4 +59,34 @@ func StringLenExact(length int) schema.SchemaValidateFunc {
 
 		return warnings, errors
 	}
+}
+
+// validateLowerCaseMapKeys warns about map keys that B2 stores in lower case.
+func validateLowerCaseMapKeys(i interface{}, path cty.Path) diag.Diagnostics {
+	// Values that are not maps are already rejected by the SDK before this runs
+	m, ok := i.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		if key != strings.ToLower(key) {
+			keys = append(keys, key)
+		}
+	}
+	sort.Strings(keys)
+
+	diags := make(diag.Diagnostics, 0, len(keys))
+	for _, key := range keys {
+		diags = append(diags, diag.Diagnostic{
+			Severity: diag.Warning,
+			Summary:  "Key will be stored in lower case",
+			Detail: fmt.Sprintf("B2 converts keys to lower case, so %q will be stored and returned as %q.",
+				key, strings.ToLower(key)),
+			AttributePath: path.Copy().IndexString(key),
+		})
+	}
+
+	return diags
 }

@@ -23,7 +23,7 @@ B2 bucket data source.
 
 - `account_id` (String) Account ID that the bucket belongs to.
 - `bucket_id` (String) The ID of the bucket.
-- `bucket_info` (Map of String) User-defined information to be stored with the bucket.
+- `bucket_info` (Map of String) User-defined information stored with the bucket. Keys are returned in lower case, as B2 converts them when they are stored.
 - `bucket_type` (String) The bucket type. Either 'allPublic', meaning that files in this bucket can be downloaded by anybody, or 'allPrivate'.
 - `cors_rules` (List of Object) The initial list of CORS rules for this bucket. (see [below for nested schema](#nestedatt--cors_rules))
 - `default_server_side_encryption` (List of Object) The default server-side encryption settings of this bucket. (see [below for nested schema](#nestedatt--default_server_side_encryption))

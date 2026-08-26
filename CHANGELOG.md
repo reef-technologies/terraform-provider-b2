@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+* Ignore `bucket_info` key case differences in `b2_bucket` resource, which caused a permanent diff
+
 ## [0.13.2] - 2026-07-27
 
 ### Infrastructure
