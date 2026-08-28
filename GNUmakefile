@@ -48,7 +48,7 @@ vulncheck:
 
 test:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
-	@go test ./...
+	@go test ./... -v -count 1 -skip '^TestAcc' $(TESTARGS)
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/
