@@ -18,6 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
+// serverAddedFileInfoKeys are the file info keys that B2 adds on upload, so they are in the state
+// without ever being in the config.
+var serverAddedFileInfoKeys = []string{"sse_c_key_id", "large_file_sha1"}
+
 func resourceB2BucketFileVersion() *schema.Resource {
 	return &schema.Resource{
 		Description: "B2 bucket file version resource.",
@@ -58,17 +62,18 @@ func resourceB2BucketFileVersion() *schema.Resource {
 				},
 			},
 			"file_info": {
-				Description: "The custom information that is uploaded with the file.",
-				Type:        schema.TypeMap,
+				Description: "The custom information that is uploaded with the file. B2 converts keys to lower " +
+					"case, so they are stored and returned in lower case. B2 also adds 'sse_c_key_id' to files " +
+					"uploaded in SSE-C mode, and 'large_file_sha1' to large files.",
+				Type: schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Optional: true,
-				ForceNew: true,
-				Computed: true,
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					return k == "file_info.sse_c_key_id" || old == new
-				},
+				Optional:         true,
+				ForceNew:         true,
+				Computed:         true,
+				ValidateDiagFunc: validateMapKeys(serverAddedFileInfoKeys...),
+				DiffSuppressFunc: suppressMapKeyCaseDiff("file_info", serverAddedFileInfoKeys...),
 			},
 			"server_side_encryption": {
 				Description: "Server-side encryption settings.",

@@ -196,6 +196,65 @@ func TestAccResourceB2BucketFileVersion_sse_c(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "upload_timestamp", regexp.MustCompile("^[0-9]{13}$")),
 				),
 			},
+			{
+				// The sse_c_key_id added by B2 must not be planned as a removal of a file info key
+				Config:   testAccResourceB2BucketFileVersionConfig_sse_c(bucketName, tempFile),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func TestAccResourceB2BucketFileVersion_fileInfoKeyCase(t *testing.T) {
+	resourceName := "b2_bucket_file_version.test"
+
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+	tempFile := createTempFileString(t, "hello")
+	defer func() { _ = os.Remove(tempFile) }()
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// B2 stores the key in lower case, which must not show up as a permanent diff
+				Config: testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName, tempFile,
+					`ManagedBy = "Terraform"`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "file_info.%", "1"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.managedby", "Terraform"),
+				),
+			},
+			{
+				// The key stored in lower case must not be planned as a new file version
+				Config: testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName, tempFile,
+					`ManagedBy = "Terraform"`),
+				PlanOnly: true,
+			},
+			{
+				// Changing the key case only is not a change for B2
+				Config: testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName, tempFile,
+					`managedby = "Terraform"`),
+				PlanOnly: true,
+			},
+			{
+				// Adding a key requires a new file version, as B2 stores file info on upload only
+				Config: testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName, tempFile,
+					`ManagedBy = "Terraform"
+    description = "the file"`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "file_info.%", "2"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.managedby", "Terraform"),
+					resource.TestCheckResourceAttr(resourceName, "file_info.description", "the file"),
+				),
+			},
+			{
+				// Removing a key requires a new file version too, so it must not be suppressed
+				Config: testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName, tempFile,
+					`ManagedBy = "Terraform"`),
+				PlanOnly:           true,
+				ExpectNonEmptyPlan: true,
+			},
 		},
 	})
 }
@@ -213,6 +272,24 @@ resource "b2_bucket_file_version" "test" {
   source = "%s"
 }
 `, bucketName, tempFile)
+}
+
+func testAccResourceB2BucketFileVersionConfig_fileInfo(bucketName string, tempFile string, fileInfo string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPublic"
+}
+
+resource "b2_bucket_file_version" "test" {
+  bucket_id = b2_bucket.test.id
+  file_name = "temp.txt"
+  source = "%s"
+  file_info = {
+    %s
+  }
+}
+`, bucketName, tempFile, fileInfo)
 }
 
 func testAccResourceB2BucketFileVersionConfig_all(bucketName string, tempFile string) string {
