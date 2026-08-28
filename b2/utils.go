@@ -23,6 +23,45 @@ func If[T any](cond bool, vtrue, vfalse T) T {
 	return vfalse
 }
 
+// orderLifecycleRules reorders lifecycle rules returned by B2 to match the order of
+// rules in desired. B2 does not guarantee the order of lifecycle rules in bucket
+// responses, which would otherwise cause a permanent diff (and a needless bucket
+// revision bump on every apply) for list-typed lifecycle_rules. Rules are matched
+// by file name prefix; rules missing from desired (e.g. added out-of-band) keep
+// the API order at the end of the list.
+func orderLifecycleRules(rules []LifecycleRule, desired []interface{}) []LifecycleRule {
+	if len(rules) < 2 || len(desired) == 0 {
+		return rules
+	}
+
+	consumed := make([]bool, len(rules))
+	result := make([]LifecycleRule, 0, len(rules))
+
+	for _, d := range desired {
+		wanted, ok := d.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		prefix, _ := wanted["file_name_prefix"].(string)
+
+		for i, rule := range rules {
+			if !consumed[i] && rule.FileNamePrefix == prefix {
+				consumed[i] = true
+				result = append(result, rule)
+				break
+			}
+		}
+	}
+
+	for i, rule := range rules {
+		if !consumed[i] {
+			result = append(result, rule)
+		}
+	}
+
+	return result
+}
+
 // suppressMapKeyCaseDiff suppresses diffs of a map attribute caused only by B2 storing keys in lower
 // case. Keys listed in serverAddedKeys are the ones B2 adds on its own, so finding them in the state
 // but not in the config is not a change. Attributes without such keys must not pass any, as then every

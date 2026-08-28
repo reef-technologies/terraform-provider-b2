@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Ignore `file_info` key case differences in `b2_bucket_file_version` resource, which caused the file to be re-uploaded on every apply
 * Stop re-uploading `b2_bucket_file_version` files whose `file_info` gained a key from B2, such as `sse_c_key_id` or `large_file_sha1`
 * Warn when `file_info` in `b2_bucket_file_version` resource sets a key that B2 sets itself, such as `sse_c_key_id` or `large_file_sha1`
+* Stop `b2_bucket` `lifecycle_rules` order diffs caused by B2 not guaranteeing the rule order (a permanent plan and needless `revision` bumps on every apply)
+
+### Infrastructure
+* Add `make test` target running unit tests and run them in CI
 
 ## [0.13.2] - 2026-07-27
 

@@ -7,7 +7,7 @@ OS_ARCH=$(shell go env GOOS)_$(shell go env GOARCH)
 
 default: build
 
-.PHONY: _pybindings deps deps-check format lint vulncheck testacc clean build install docs docs-lint
+.PHONY: _pybindings deps deps-check format lint vulncheck test testacc clean build install docs docs-lint
 
 _pybindings:
 ifeq ($(origin NOPYBINDINGS), undefined)
@@ -45,6 +45,10 @@ lint: _pybindings
 vulncheck:
 	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
 	@govulncheck ./...
+
+test:
+	@test -f b2/py-terraform-provider-b2 || touch b2/py-terraform-provider-b2 # required by go:embed in bindings.go
+	@go test ./...
 
 testacc: _pybindings
 	@cp python-bindings/dist/py-terraform-provider-b2 b2/
