@@ -52,6 +52,12 @@ make install
 Testing
 -------
 
+Unit tests need no credentials and do not create any resources.
+
+```
+make test
+```
+
 *Note:* Acceptance tests create real resources, and often cost money to run.
 
 ```
