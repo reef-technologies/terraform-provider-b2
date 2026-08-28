@@ -152,6 +152,9 @@ func resourceB2BucketCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	d.SetId(output.BucketId)
 
+	// B2 does not guarantee the order of lifecycle rules, store them in config order
+	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+
 	err = client.Populate(ctx, OpResourceCreate, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -182,6 +185,9 @@ func resourceB2BucketRead(ctx context.Context, d *schema.ResourceData, meta inte
 		return nil
 	}
 
+	// B2 does not guarantee the order of lifecycle rules, store them in state order
+	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
+
 	err = client.Populate(ctx, OpResourceRead, &output, d)
 	if err != nil {
 		return diag.FromErr(err)
@@ -209,6 +215,9 @@ func resourceB2BucketUpdate(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		return diag.FromErr(err)
 	}
+
+	// B2 does not guarantee the order of lifecycle rules, store them in config order
+	output.LifecycleRules = orderLifecycleRules(output.LifecycleRules, d.Get("lifecycle_rules").([]interface{}))
 
 	err = client.Populate(ctx, OpResourceUpdate, &output, d)
 	if err != nil {

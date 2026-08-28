@@ -316,6 +316,65 @@ func TestAccResourceB2Bucket_bucketInfoKeyCase(t *testing.T) {
 	})
 }
 
+func TestAccResourceB2Bucket_lifecycleRulesOrder(t *testing.T) {
+	resourceName := "b2_bucket.test"
+	bucketName := acctest.RandomWithPrefix("test-b2-tfp")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// B2 does not return lifecycle rules in the order they were set,
+				// the state must be stored in the config order regardless
+				Config: testAccResourceB2BucketConfig_lifecycleRulesOrder(bucketName),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.#", "4"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.file_name_prefix", "uploads/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.0.days_from_uploading_to_hiding", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.file_name_prefix", "files/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.1.days_from_hiding_to_deleting", "1"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.file_name_prefix", "thumbnails/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.2.days_from_uploading_to_hiding", "2"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.3.file_name_prefix", "avatars/"),
+					resource.TestCheckResourceAttr(resourceName, "lifecycle_rules.3.days_from_hiding_to_deleting", "2"),
+				),
+			},
+			{
+				// The rule order must not be planned as a change
+				Config:   testAccResourceB2BucketConfig_lifecycleRulesOrder(bucketName),
+				PlanOnly: true,
+			},
+		},
+	})
+}
+
+func testAccResourceB2BucketConfig_lifecycleRulesOrder(bucketName string) string {
+	return fmt.Sprintf(`
+resource "b2_bucket" "test" {
+  bucket_name = "%s"
+  bucket_type = "allPublic"
+
+  lifecycle_rules {
+    file_name_prefix = "uploads/"
+    days_from_uploading_to_hiding = 1
+  }
+  lifecycle_rules {
+    file_name_prefix = "files/"
+    days_from_hiding_to_deleting = 1
+  }
+  lifecycle_rules {
+    file_name_prefix = "thumbnails/"
+    days_from_uploading_to_hiding = 2
+  }
+  lifecycle_rules {
+    file_name_prefix = "avatars/"
+    days_from_hiding_to_deleting = 2
+  }
+}
+`, bucketName)
+}
+
 func testAccResourceB2BucketConfig_bucketInfo(bucketName string, key string) string {
 	return fmt.Sprintf(`
 resource "b2_bucket" "test" {
