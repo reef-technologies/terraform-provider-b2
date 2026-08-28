@@ -61,32 +61,53 @@ func StringLenExact(length int) schema.SchemaValidateFunc {
 	}
 }
 
-// validateLowerCaseMapKeys warns about map keys that B2 stores in lower case.
-func validateLowerCaseMapKeys(i interface{}, path cty.Path) diag.Diagnostics {
-	// Values that are not maps are already rejected by the SDK before this runs
-	m, ok := i.(map[string]interface{})
-	if !ok {
-		return nil
+// validateMapKeys warns about map keys that B2 stores in lower case, and about keys listed in
+// serverAddedKeys, which B2 sets on its own.
+func validateMapKeys(serverAddedKeys ...string) schema.SchemaValidateDiagFunc {
+	serverAdded := make(map[string]struct{}, len(serverAddedKeys))
+	for _, key := range serverAddedKeys {
+		serverAdded[strings.ToLower(key)] = struct{}{}
 	}
 
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		if key != strings.ToLower(key) {
+	return func(i interface{}, path cty.Path) diag.Diagnostics {
+		// Values that are not maps are already rejected by the SDK before this runs
+		m, ok := i.(map[string]interface{})
+		if !ok {
+			return nil
+		}
+
+		keys := make([]string, 0, len(m))
+		for key := range m {
 			keys = append(keys, key)
 		}
-	}
-	sort.Strings(keys)
+		sort.Strings(keys)
 
-	diags := make(diag.Diagnostics, 0, len(keys))
-	for _, key := range keys {
-		diags = append(diags, diag.Diagnostic{
-			Severity: diag.Warning,
-			Summary:  "Key will be stored in lower case",
-			Detail: fmt.Sprintf("B2 converts keys to lower case, so %q will be stored and returned as %q.",
-				key, strings.ToLower(key)),
-			AttributePath: path.Copy().IndexString(key),
-		})
-	}
+		diags := make(diag.Diagnostics, 0, len(keys))
+		for _, key := range keys {
+			lowerCaseKey := strings.ToLower(key)
 
-	return diags
+			if key != lowerCaseKey {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "Key will be stored in lower case",
+					Detail: fmt.Sprintf("B2 converts keys to lower case, so %q will be stored and returned as %q.",
+						key, lowerCaseKey),
+					AttributePath: path.Copy().IndexString(key),
+				})
+			}
+
+			if _, isServerAdded := serverAdded[lowerCaseKey]; isServerAdded {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  "Key is set by B2",
+					Detail: fmt.Sprintf("B2 sets %q on its own, so the configured value can be replaced on "+
+						"upload, and removing the key from the configuration later is not detected as a change.",
+						lowerCaseKey),
+					AttributePath: path.Copy().IndexString(key),
+				})
+			}
+		}
+
+		return diags
+	}
 }

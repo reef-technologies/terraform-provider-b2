@@ -62,7 +62,7 @@ func resourceB2Bucket() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional:         true,
-				ValidateDiagFunc: validateLowerCaseMapKeys,
+				ValidateDiagFunc: validateMapKeys(),
 				DiffSuppressFunc: suppressMapKeyCaseDiff("bucket_info"),
 			},
 			"cors_rules": {

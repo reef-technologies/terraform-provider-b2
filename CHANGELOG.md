@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Ignore `bucket_info` key case differences in `b2_bucket` resource, which caused a permanent diff
+* Ignore `file_info` key case differences in `b2_bucket_file_version` resource, which caused the file to be re-uploaded on every apply
+* Stop re-uploading `b2_bucket_file_version` files whose `file_info` gained a key from B2, such as `sse_c_key_id` or `large_file_sha1`
+* Warn when `file_info` in `b2_bucket_file_version` resource sets a key that B2 sets itself, such as `sse_c_key_id` or `large_file_sha1`
 
 ## [0.13.2] - 2026-07-27
 

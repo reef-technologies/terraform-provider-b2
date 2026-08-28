@@ -44,8 +44,9 @@ func getDataSourceFileVersionsElem() *schema.Resource {
 				Computed:    true,
 			},
 			"file_info": {
-				Description: "The custom information that is uploaded with the file.",
-				Type:        schema.TypeMap,
+				Description: "The custom information that is uploaded with the file. Keys are returned in lower " +
+					"case, as B2 converts them when they are stored.",
+				Type: schema.TypeMap,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},

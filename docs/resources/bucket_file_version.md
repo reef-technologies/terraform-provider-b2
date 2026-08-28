@@ -24,7 +24,7 @@ B2 bucket file version resource.
 ### Optional
 
 - `content_type` (String) Content type. If not set, it will be set based on the file extension. **Modifying this attribute will force creation of a new resource.**
-- `file_info` (Map of String) The custom information that is uploaded with the file. **Modifying this attribute will force creation of a new resource.**
+- `file_info` (Map of String) The custom information that is uploaded with the file. B2 converts keys to lower case, so they are stored and returned in lower case. B2 also adds 'sse_c_key_id' to files uploaded in SSE-C mode, and 'large_file_sha1' to large files. **Modifying this attribute will force creation of a new resource.**
 - `server_side_encryption` (Block List, Max: 1) Server-side encryption settings. **Modifying this attribute will force creation of a new resource.** (see [below for nested schema](#nestedblock--server_side_encryption))
 
 ### Read-Only

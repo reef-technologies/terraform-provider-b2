@@ -23,13 +23,21 @@ func If[T any](cond bool, vtrue, vfalse T) T {
 	return vfalse
 }
 
-// suppressMapKeyCaseDiff suppresses diffs of a map attribute caused only by B2 storing keys in lower case.
-func suppressMapKeyCaseDiff(attribute string) schema.SchemaDiffSuppressFunc {
+// suppressMapKeyCaseDiff suppresses diffs of a map attribute caused only by B2 storing keys in lower
+// case. Keys listed in serverAddedKeys are the ones B2 adds on its own, so finding them in the state
+// but not in the config is not a change. Attributes without such keys must not pass any, as then every
+// key missing from the config has been removed from it.
+func suppressMapKeyCaseDiff(attribute string, serverAddedKeys ...string) schema.SchemaDiffSuppressFunc {
 	prefix := attribute + "."
+
+	serverAdded := make(map[string]struct{}, len(serverAddedKeys))
+	for _, key := range serverAddedKeys {
+		serverAdded[strings.ToLower(key)] = struct{}{}
+	}
 
 	return func(k, old, new string, d *schema.ResourceData) bool {
 		key, found := strings.CutPrefix(k, prefix)
-		if !found || key == "%" {
+		if !found {
 			return false
 		}
 
@@ -38,13 +46,48 @@ func suppressMapKeyCaseDiff(attribute string) schema.SchemaDiffSuppressFunc {
 			return false
 		}
 		state, _ := d.GetChange(attribute)
+		stateMap := stateMapAttribute(state)
+
+		// The element count diff carries key removals that the element diffs do not, so it can only be
+		// suppressed once the whole map is known to hold what the config asks for
+		if key == "%" {
+			return len(serverAdded) > 0 && mapStoresConfig(config, stateMap, serverAdded)
+		}
 
 		key = strings.ToLower(key)
-		stateValue, inState := lookupLowerCaseKey(stateMapAttribute(state), key)
 		configValue, inConfig := lookupLowerCaseKey(config, key)
+		if !inConfig {
+			_, isServerAdded := serverAdded[key]
+			return isServerAdded
+		}
 
-		return inState && inConfig && stateValue == configValue
+		stateValue, inState := lookupLowerCaseKey(stateMap, key)
+
+		return inState && stateValue == configValue
 	}
+}
+
+// mapStoresConfig reports whether every configured key is stored with the same value, and whether
+// every stored key is either configured or one that B2 adds on its own.
+func mapStoresConfig(config, state map[string]string, serverAdded map[string]struct{}) bool {
+	for key, configValue := range config {
+		stateValue, inState := lookupLowerCaseKey(state, strings.ToLower(key))
+		if !inState || stateValue != configValue {
+			return false
+		}
+	}
+
+	for key := range state {
+		key = strings.ToLower(key)
+		if _, inConfig := lookupLowerCaseKey(config, key); inConfig {
+			continue
+		}
+		if _, isServerAdded := serverAdded[key]; !isServerAdded {
+			return false
+		}
+	}
+
+	return true
 }
 
 // configMapAttribute reads a map attribute from the raw config, so that values missing from the
