@@ -64,12 +64,13 @@ install: build
 
 docs: build
 	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
-	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs
+	# Provider name is passed explicitly, otherwise tfplugindocs derives it from the directory name (breaks in git worktrees).
+	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs generate --provider-name ${BINARY}
 
 docs-lint: build
-	@tfplugindocs validate
+	@tfplugindocs validate --provider-name ${BINARY}
 	# We clear B2 application key env variables to not include them in docs. DO NOT REMOVE IT!
-	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs
+	@B2_APPLICATION_KEY_ID= B2_APPLICATION_KEY= tfplugindocs generate --provider-name ${BINARY}
 	@git diff --exit-code -- docs/ || \
 		(echo; echo "Unexpected difference in docs. Run 'make docs' command or revert any changes in the schema."; exit 1)
 
