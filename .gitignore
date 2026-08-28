@@ -56,3 +56,7 @@ b2/py-terraform-provider-b2
 build/
 dist/
 venv/
+
+# Local tooling
+.memsearch/
+.worktrees/
